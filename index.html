@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulado: Gerenciamento de Riscos</title>
+<style>
+:root{--bg:#f3f5f7;--card:#fff;--ink:#1c2630;--mute:#5c6b78;--line:#d5dce2;--acc:#0f5c7a;--acc2:#e8f2f6;--warn:#b3261e;--warnbg:#fdecea;--ok:#1b6b3a}
+@media(prefers-color-scheme:dark){:root{--bg:#12171c;--card:#1b232b;--ink:#e6ecf0;--mute:#9aa9b5;--line:#2f3b46;--acc:#5ab8d9;--acc2:#1d3340;--warn:#ff8a80;--warnbg:#3a1e1c;--ok:#6fd49a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif}
+.wrap{max-width:820px;margin:0 auto;padding:16px 16px 80px}
+header{padding:24px 0 8px}
+h1{font-size:1.7rem;margin:0 0 4px;line-height:1.2}
+.sub{color:var(--mute);margin:0 0 16px;font-family:system-ui,sans-serif;font-size:.92rem}
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);font-family:system-ui,sans-serif;font-size:.85rem;color:var(--mute)}
+.track{height:6px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
+.fill{height:100%;width:0;background:var(--acc);transition:width .25s}
+label.nm{display:block;font-family:system-ui,sans-serif;font-size:.9rem;margin-bottom:4px}
+input[type=text]{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font:inherit}
+.q{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:18px;margin:18px 0}
+.q h2{font-size:1.02rem;margin:0 0 12px;font-weight:600}
+.q h2 span{color:var(--acc);margin-right:6px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);border-radius:6px;margin:6px 0;cursor:pointer;font-size:.95rem}
+.opt:hover{background:var(--acc2)}
+.opt input{margin-top:5px;accent-color:var(--acc)}
+.opt.sel{border-color:var(--acc);background:var(--acc2)}
+.opt b{min-width:1.2em}
+.just{margin-top:12px}
+.just label{display:block;font-family:system-ui,sans-serif;font-size:.85rem;color:var(--mute);margin-bottom:4px}
+textarea{width:100%;min-height:84px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font:inherit;font-size:.95rem;resize:vertical}
+textarea:disabled{opacity:.55;cursor:not-allowed}
+textarea.flag{border-color:var(--warn)}
+.meta{display:flex;justify-content:space-between;font-family:system-ui,sans-serif;font-size:.78rem;color:var(--mute);margin-top:3px}
+.alert{display:none;margin-top:6px;padding:7px 10px;border-radius:6px;background:var(--warnbg);color:var(--warn);font-family:system-ui,sans-serif;font-size:.82rem}
+.alert.on{display:block}
+.actions{text-align:center;margin-top:28px;font-family:system-ui,sans-serif}
+button{background:var(--acc);color:#fff;border:0;border-radius:6px;padding:13px 28px;font:600 1rem system-ui,sans-serif;cursor:pointer}
+.dark-btn{color:#0b1a22}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+#res{display:none;text-align:center;padding:48px 16px;font-family:system-ui,sans-serif}
+#res .big{font-size:3.4rem;font-weight:700;color:var(--ok)}
+.err{color:var(--warn);font-family:system-ui,sans-serif;font-size:.9rem;margin-top:10px;min-height:1.2em}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div id="main">
+<header>
+<h1>Simulado: Gerenciamento de Riscos</h1>
+<p class="sub">Engenharia de Software · 25 questões. Marque uma alternativa e justifique com suas próprias palavras. Colar texto é bloqueado e fica registrado no relatório. Suas respostas são salvas automaticamente neste navegador.</p>
+<label class="nm" for="nome">Nome do aluno</label>
+<input type="text" id="nome" autocomplete="name" placeholder="Digite seu nome completo">
+</header>
+<div class="bar"><span id="prog">0 de 25 respondidas</span><div class="track"><div class="fill" id="fill"></div></div></div>
+<div id="qs"></div>
+<div class="actions">
+<button id="send" type="button">Enviar respostas e baixar PDF</button>
+<div class="err" id="err" role="alert"></div>
+</div>
+</div>
+<div id="res">
+<div class="big" id="score"></div>
+<p id="pct"></p>
+<p>Envio concluído. Não é possível enviar novamente. Se o PDF não foi baixado, clique abaixo.</p>
+<button id="again" type="button">Baixar PDF novamente</button>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+// [numero no PDF original, enunciado, [correta, errada, errada, errada, errada]]
+const Q=[
+[1,"Em projetos de software, qual opção diferencia corretamente Risco de Problema?",["Risco é um evento incerto que, ao se concretizar, gera impactos; Problema é uma condição já consumada que exige contenção imediata.","Risco refere-se a falhas exclusivas de código; Problema abrange falhas humanas de integração.","Problema tem natureza probabilística e Risco tem impacto determinístico no cronograma.","Todo risco tem probabilidade de 100%, e o problema varia de 1% a 99%.","São sinônimos perfeitos na gestão ágil, dispensando planos de resposta."]],
+[2,"Um integrante adoece na semana final de entrega e o deploy se torna inviável. Como o evento é classificado no momento em que ocorre?",["Problema real consumado, com impacto imediato no projeto.","Risco técnico emergente de alta incerteza.","Risco organizacional com probabilidade nula.","Indicador de mitigação bem-sucedida.","Incidente de escopo não classificável."]],
+[5,"A falta de capacitação prévia da equipe em um framework JavaScript antes do desenvolvimento representa:",["Um risco técnico/humano que aumenta a probabilidade de atrasos ou código de baixa qualidade.","Um problema financeiro direto na contratação de serviços externos.","Uma ação mitigatória para acelerar o aprendizado em produção.","Um plano de contingência contra vazamento de dados.","Um fator irrelevante na matriz de probabilidade e impacto."]],
+[10,"Qual alternativa indica corretamente um RISCO (e não causa, efeito ou problema)?",["A API externa de pagamento sofrer indisponibilidade prolongada durante as vendas.","Falta de treinamento da equipe.","O cliente cancelar o contrato.","O servidor queimou ontem.","A empresa não ter fundo de reserva."]],
+[11,"Incompatibilidades de arquitetura, falhas de desempenho em banco de dados e problemas de integração entre frontend e backend são:",["Riscos Técnicos.","Riscos Organizacionais.","Riscos Humanos.","Riscos de Recursos Financeiros.","Riscos de prazo puramente operacionais."]],
+[14,"Armazenar senhas em texto puro no banco de dados expõe o projeto a um gravíssimo:",["Risco de Segurança.","Risco de Prazo.","Risco Organizacional de layout.","Risco de estimativa de custo.","Risco de desempenho de hardware."]],
+[17,"Centralizar todo o conhecimento arquitetural em um único desenvolvedor representa um risco de natureza primária:",["Humana.","Financeira, pura e simplesmente.","De rede de computadores.","De licenciamento de software.","De interface."]],
+[21,"Qual é o principal objetivo da fase de IDENTIFICAÇÃO de riscos?",["Mapear antecipadamente as situações potenciais que podem prejudicar o projeto.","Eliminar 100% dos problemas existentes em produção.","Punir membros da equipe que cometem erros de programação.","Reduzir o valor pago a fornecedores externos.","Definir as tabelas e schemas do banco de dados."]],
+[22,"Em um Brainstorming de Riscos, a atitude correta da equipe é:",["Levantar o maior número possível de incertezas e ameaças, sem censura prévia, para análise posterior.","Resolver imediatamente cada risco sugerido, descartando ideias complexas.","Permitir que apenas o gerente fale e identifique os riscos.","Focar apenas nos riscos com probabilidade de 100%.","Limitar o levantamento a dois riscos por projeto."]],
+[28,"Sobre o registro de riscos (Risk Register), é correto afirmar que:",["É um documento vivo, atualizado e revisado periodicamente.","É estático: criado no primeiro dia e nunca mais alterado.","Deve conter apenas os riscos de menor prioridade para não assustar o cliente.","É exclusivo de projetos em cascata, inútil no Scrum.","Serve apenas para justificar demissões."]],
+[31,"A avaliação de um risco fundamenta-se essencialmente em quais duas variáveis?",["Probabilidade de ocorrência e Impacto no projeto.","Custo financeiro e quantidade de linhas de código.","Tempo de reuniões e quantidade de desenvolvedores.","Complexidade do algoritmo e linguagem escolhida.","Severidade do bug e versão do sistema operacional."]],
+[32,"Em escalas de 1 a 5 para Probabilidade e Impacto, a fórmula padrão da Pontuação do Risco é:",["Probabilidade × Impacto","Probabilidade + Impacto","Probabilidade / Impacto","(Probabilidade × 2) + Impacto","Apenas o Impacto"]],
+[34,"O risco \"Perda total do banco de dados por ausência de backup\" tem Probabilidade 3 e Impacto 5. Qual a pontuação?",["15 (Risco Alto)","8","25 (Risco Crítico)","10","35"]],
+[36,"Na régua 1-4: Baixo; 5-9: Moderado; 10-16: Alto; 17-25: Crítico, uma pontuação 20 é:",["Risco Crítico.","Risco Baixo.","Risco Moderado.","Risco Alto.","Risco Mínimo."]],
+[39,"Um risco com Probabilidade 1 e Impacto 5 resulta em pontuação 5. Ele deve ser tratado como:",["Risco Moderado, exigindo monitoramento e plano de contingência caso ocorra.","Risco Baixo sem necessidade de acompanhamento.","Risco Crítico, com paralisação imediata do projeto.","Problema consumado.","Evento impossível de acontecer."]],
+[43,"O conceito de MITIGAÇÃO de risco refere-se a:",["Adotar ações antecipadas para reduzir a probabilidade de ocorrência ou diminuir o impacto do risco.","Ignorar o risco até que ele desapareça espontaneamente.","Executar o plano de restauração após o sistema ter sido destruído.","Contratar um seguro exclusivo para a equipe de testes.","Reescrever todo o código em outra linguagem no final do projeto."]],
+[44,"Qual a diferença fundamental entre PREVENÇÃO e CONTINGÊNCIA?",["Prevenção age ANTES para evitar que o risco ocorra; Contingência define o que fazer DEPOIS que ele se concretizar.","Prevenção é executada durante desastres; Contingência é um treinamento teórico.","Contingência busca evitar o risco; Prevenção é a aceitação passiva do dano.","Ambas ocorrem exatamente no mesmo instante durante o deploy.","Prevenção se aplica só a hardware; Contingência só a software."]],
+[45,"Para o risco \"Perda total de dados por falha no servidor\", configurar backups automáticos diários em nuvem separada é:",["Ação de Prevenção/Mitigação.","Plano de Contingência pura.","Aceitação passiva do risco.","Análise de causa-raiz tardia.","Falha de processo."]],
+[49,"Quando a gestão opta por ACEITAR um risco (aceitação passiva), isso significa que:",["A equipe assume as consequências caso ele ocorra, pois o custo de mitigação supera o impacto.","O risco foi erradicado e nunca mais acontecerá.","A equipe não sabe gerenciar projetos.","O cliente pagará multa caso o risco ocorra.","O sistema será cancelado imediatamente."]],
+[50,"A estratégia de TRANSFERÊNCIA de risco envolve:",["Repassar a terceiros a responsabilidade financeira ou operacional pelo impacto (ex.: seguros ou SLA de fornecedores).","Deixar o problema para o desenvolvedor júnior resolver sozinho.","Deletar do Git o código com falha.","Esconder o risco da diretoria.","Alterar o escopo sem avisar o cliente."]],
+[52,"No projeto de delivery, o cadastro está atrasado, a integração de pagamento falha, só 1 membro sabe configurar o BD e não há backups. Qual a PRIMEIRA ação de emergência?",["Realizar um backup imediato do banco existente e configurar uma rotina automática.","Mudar o layout para cores mais escuras.","Aceitar 5 novas funcionalidades do cliente.","Demitir o único integrante que conhece o banco.","Cancelar a apresentação sem avisar."]],
+[53,"No mesmo cenário, o cliente pede 3 novas funcionalidades no sprint final. Como o gerente deve conter o risco de prazo?",["Negociar o escopo, mostrando o impacto em prazo/custo e congelando novas inclusões até a entrega do MVP.","Aceitar todas sem alterar o prazo final.","Parar os testes de segurança para codificar as novas funções.","Ignorar os requisitos prontos e recomeçar do zero.","Adiar o projeto em 2 anos de forma unilateral."]],
+[57,"Nos testes, a consulta de pedidos leva 45 segundos em um banco com 10.000 registros. Essa situação caracteriza:",["Um problema de desempenho já consumado no código/modelagem.","Um risco de prazo futuro sem relação com o banco.","Uma funcionalidade de segurança deliberada.","Um risco financeiro imutável.","Um erro de digitação do usuário."]],
+[73,"Por que não se deve focar APENAS nos riscos de alta probabilidade na matriz?",["Porque riscos de baixa probabilidade e impacto catastrófico (ex.: perda total de dados) podem quebrar a empresa.","Porque riscos de baixa probabilidade ocorrem em 100% dos casos.","Porque o cliente só se importa com riscos de baixa probabilidade.","Porque a matriz proíbe a análise de impactos altos.","Não há motivo: deve-se focar só na alta probabilidade."]],
+[85,"Qual o papel dos Testes de Restauração de Backup (Disaster Recovery Test)?",["Mitigar o risco de descobrir backups corrompidos só durante uma emergência real.","Reduzir o espaço em disco do servidor de banco.","Treinar o cliente a escrever SQL.","Impedir o envio de spam à caixa de entrada da empresa.","Acelerar a placa gráfica do computador."]]
+];
+
+const LET="ABCDE", MIN=30;
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+// cada questão: opções embaralhadas, guardando qual índice é o correto
+const KEY="simulado_riscos_v1";
+let saved=null;try{saved=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+const meta={sub:saved&&saved.sub?saved.sub:null};
+const S=Q.map(([n,t,o])=>{const sv=saved&&saved.q&&saved.q[n]||{};const idx=Array.isArray(sv.idx)&&sv.idx.length===5?sv.idx:shuf([0,1,2,3,4]);
+ return{n,t,idx,opts:idx.map(i=>o[i]),ok:idx.indexOf(0),pick:Number.isInteger(sv.pick)?sv.pick:-1,just:sv.just||"",paste:sv.paste||0,jump:sv.jump||0}});
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({nome:document.getElementById("nome").value,sub:meta.sub,
+ q:Object.fromEntries(S.map(q=>[q.n,{idx:q.idx,pick:q.pick,just:q.just,paste:q.paste,jump:q.jump}]))}))}catch(e){}}
+document.getElementById("nome").value=saved&&saved.nome||"";
+document.getElementById("nome").addEventListener("input",persist);
+
+const qs=document.getElementById("qs");
+S.forEach((q,i)=>{
+ const d=document.createElement("div");d.className="q";
+ d.innerHTML=`<h2><span>${i+1}.</span>${q.t}</h2>`+
+ q.opts.map((o,k)=>`<label class="opt"><input type="radio" name="q${i}" value="${k}"><b>${LET[k]})</b><span>${o}</span></label>`).join("")+
+ `<div class="just"><label for="j${i}">Justifique a resposta escolhida (mín. ${MIN} caracteres, escreva com suas palavras)</label>
+ <textarea id="j${i}" disabled placeholder="Marque uma alternativa para liberar este campo"></textarea>
+ <div class="meta"><span id="c${i}">0/${MIN}</span><span></span></div>
+ <div class="alert" id="a${i}" role="alert"></div></div>`;
+ qs.appendChild(d);
+ const ta=d.querySelector("textarea"),al=d.querySelector(".alert");
+ let prev="";
+ if(q.pick>=0){const r=d.querySelector('input[value="'+q.pick+'"]');r.checked=true;r.closest(".opt").classList.add("sel");
+  ta.disabled=false;ta.placeholder="Explique por que esta é a alternativa correta...";ta.value=q.just;prev=q.just;
+  document.getElementById("c"+i).textContent=q.just.trim().length+"/"+MIN}
+ const flag=(kind,msg)=>{q[kind]++;ta.classList.add("flag");al.textContent=msg;al.classList.add("on");persist()};
+ d.querySelectorAll("input[type=radio]").forEach(r=>r.addEventListener("change",()=>{
+  q.pick=+r.value;ta.disabled=false;ta.placeholder="Explique por que esta é a alternativa correta...";
+  d.querySelectorAll(".opt").forEach(l=>l.classList.toggle("sel",l.contains(r)&&r.checked));upd();persist()}));
+ ta.addEventListener("paste",e=>{e.preventDefault();flag("paste","Colar texto não é permitido. A tentativa foi registrada no relatório.")});
+ ta.addEventListener("drop",e=>{e.preventDefault();flag("paste","Arrastar texto para o campo não é permitido. A tentativa foi registrada.")});
+ ta.addEventListener("cut",e=>e.preventDefault());
+ ta.addEventListener("contextmenu",e=>e.preventDefault());
+ ta.addEventListener("input",e=>{
+  const it=e.inputType||"";
+  if(/insertFromPaste|insertFromDrop|insertFromYank|insertReplacementText/.test(it)||ta.value.length-prev.length>15){
+   ta.value=prev;flag("jump","Entrada suspeita detectada (texto inserido de uma vez). O conteúdo foi removido e o fato registrado.");return}
+  prev=ta.value;q.just=ta.value;
+  document.getElementById("c"+i).textContent=ta.value.trim().length+"/"+MIN;upd();persist()});
+});
+
+function upd(){
+ const n=S.filter(q=>q.pick>=0).length;
+ document.getElementById("prog").textContent=n+" de "+S.length+" respondidas";
+ document.getElementById("fill").style.width=(n/S.length*100)+"%";
+}
+
+upd();
+let pdfDoc=null;
+function buildPdf(nome,acertos,when){
+ const {jsPDF}=window.jspdf,doc=new jsPDF({unit:"mm",format:"a4"});
+ const W=180,L=15;let y=18;
+ const line=(txt,size=10,bold=false,gap=5)=>{
+  doc.setFont("helvetica",bold?"bold":"normal");doc.setFontSize(size);
+  doc.splitTextToSize(txt,W).forEach(l=>{if(y>280){doc.addPage();y=18}doc.text(l,L,y);y+=gap})};
+ line("Simulado: Gerenciamento de Riscos",16,true,8);
+ line("Engenharia de Software - Resultado do aluno",10,false,6);
+ line("Aluno: "+nome,11,true,6);
+ line("Data do envio: "+new Date(when).toLocaleString("pt-BR"),10,false,8);
+ line("Acertos: "+acertos+" de "+S.length+" ("+Math.round(acertos/S.length*100)+"%)",14,true,8);
+ const sus=S.filter(q=>q.paste||q.jump);
+ line("Questoes com tentativa de colar/inserir texto: "+(sus.length?sus.map(q=>S.indexOf(q)+1).join(", "):"nenhuma"),10,false,8);
+ doc.line(L,y-3,L+W,y-3);y+=2;
+ S.forEach((q,i)=>{
+  line("Questao "+(i+1)+": "+q.t,9,false,4.4);
+  line("Resposta escolhida: "+LET[q.pick]+") "+q.opts[q.pick],10,true);
+  line("Justificativa: "+(q.just.trim()||"(sem justificativa)"),9,false,4.4);
+  if(q.paste||q.jump)line("ALERTA: "+(q.paste+q.jump)+" tentativa(s) de colar/inserir texto detectada(s).",9,true,4.4);
+  y+=4});
+ return doc;
+}
+function save(){
+ if(!meta.sub)return;
+ if(!window.jspdf){document.getElementById("pct").textContent="Conecte-se à internet e recarregue a página para baixar o PDF.";return}
+ if(!pdfDoc)pdfDoc=buildPdf(meta.sub.nome,meta.sub.acertos,meta.sub.at);
+ pdfDoc.save(meta.sub.file);
+}
+function showResult(){
+ document.getElementById("main").style.display="none";
+ document.getElementById("res").style.display="block";
+ document.getElementById("score").textContent=meta.sub.acertos+" / "+S.length;
+ document.getElementById("pct").textContent="Aproveitamento: "+Math.round(meta.sub.acertos/S.length*100)+"%";
+ window.scrollTo(0,0);
+}
+
+let armed=false;
+const sendBtn=document.getElementById("send");
+function fail(msg,qIndex){
+ armed=false;sendBtn.textContent="Enviar respostas e baixar PDF";
+ const err=document.getElementById("err");err.textContent=msg;
+ const el=qIndex>=0?document.querySelectorAll(".q")[qIndex]:document.getElementById("nome");
+ el.scrollIntoView({behavior:"smooth",block:"center"});
+ if(qIndex<0)el.focus();
+}
+sendBtn.addEventListener("click",()=>{
+ if(meta.sub)return;
+ document.getElementById("err").textContent="";
+ const nome=document.getElementById("nome").value.trim();
+ if(!nome)return fail("Digite seu nome no topo da página antes de enviar.",-1);
+ const sem=S.map((q,i)=>q.pick<0?i:-1).filter(i=>i>=0);
+ if(sem.length)return fail("Faltam alternativas nas questões: "+sem.map(i=>i+1).join(", ")+". Vou levar você até a primeira.",sem[0]);
+ const curta=S.map((q,i)=>q.just.trim().length<MIN?i:-1).filter(i=>i>=0);
+ if(curta.length)return fail("Justificativa curta demais nas questões: "+curta.map(i=>i+1).join(", ")+" (mínimo "+MIN+" caracteres). Vou levar você até a primeira.",curta[0]);
+ if(!window.jspdf)return fail("Não foi possível carregar o gerador de PDF. Conecte-se à internet e recarregue a página.",-1);
+ if(!armed){armed=true;sendBtn.textContent="Clique de novo para confirmar o envio (não será possível alterar)";
+  document.getElementById("err").textContent="Tudo preenchido. Confirme o envio.";return}
+ const acertos=S.filter(q=>q.pick===q.ok).length;
+ meta.sub={nome,acertos,at:new Date().toISOString(),file:"resultado_"+nome.toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g,"_")+".pdf"};
+ persist();showResult();sendBtn.disabled=true;
+ try{save()}catch(e){}
+});
+document.getElementById("again").addEventListener("click",save);
+if(meta.sub){showResult();sendBtn.disabled=true}
+</script>
+</body>
+</html>
